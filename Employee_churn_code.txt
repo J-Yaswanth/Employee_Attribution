@@ -1,0 +1,218 @@
+# Importing necessary libraries
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+import seaborn as sns
+
+# Loading or reading the data
+data = pd.read_csv("/content/Employee_churn_dataset.csv")
+data.head()
+
+# Size of the dataset
+data.shape
+
+# Columns List
+data.columns
+
+# Finding the datatype of each column
+data.dtypes
+
+# Information about the dataset
+data.info()
+
+# Checking for duplicate records
+data[data.duplicated()]
+
+# Dropping duplicate records
+data = data.drop_duplicates()
+data.head()
+
+# Checking the size of new data after dropping duplicate records
+data.shape
+
+# Checking if there are any missing values
+data.isnull().sum()
+
+# Data exploration and visualization
+data['left'].value_counts()
+
+data['left'].value_counts().plot(kind = 'bar')
+
+pd.crosstab(data.salary, data.left)
+
+pd.crosstab(data.salary, data.left).plot(kind = 'bar')
+
+pd.crosstab(data.Department, data.left)
+
+pd.crosstab(data.Department, data.left).plot(kind = 'bar')
+
+
+# Finding the distribution of numerical features in the data
+float_feature_list = []
+for col in data.columns:
+  if data.dtypes[col] == 'float64':
+    float_feature_list.append(col)
+float_feature_list
+
+int_feature_list = []
+for col in data.columns:
+  if data.dtypes[col] == 'int64':
+    int_feature_list.append(col)
+int_feature_list
+
+numerical_col_list = ['number_project',
+ 'average_montly_hours',
+ 'time_spend_company',
+ 'Work_accident',
+ 'promotion_last_5years',
+ 'satisfaction_level', 
+ 'last_evaluation']
+
+data['number_project'].plot(kind = 'hist', bins = 5, rwidth = 0.8)
+
+data['average_montly_hours'].plot(kind = 'hist', bins = 6, rwidth = 0.8)
+
+data['time_spend_company'].plot(kind = 'hist', bins = 5, rwidth = 0.8)
+
+data['satisfaction_level'].plot(kind = 'hist', bins = 5, rwidth = 0.8)
+
+data['last_evaluation'].plot(kind = 'hist', bins = 5, rwidth = 0.8)
+
+# Feature Engineering:
+# Label Encoding : Converting Categorical Features into Numerical
+from sklearn.preprocessing import LabelEncoder
+label_encoder1 = LabelEncoder()
+label_encoder2 = LabelEncoder()
+
+data['salary'] = label_encoder1.fit_transform(data['salary'])
+data['Department'] = label_encoder2.fit_transform(data['Department'])
+
+data.head()
+
+# Independent and Dependent (Target) Variables:
+X = data.drop('left', axis = 1)
+y = data['left']
+
+
+# Splitting the data into training and testing sets
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+x_train
+
+x_train.head()
+
+# Feature Scaling
+from sklearn.preprocessing import StandardScaler
+std_scaler = StandardScaler()
+
+xtrain_scaled = std_scaler.fit_transform(x_train)
+xtest_scaled = std_scaler.transform(x_test)
+
+xtrain_scaled
+xtest_scaled
+
+# Model Development using Random Forest:
+from sklearn.ensemble import RandomForestClassifier
+Random_forest_model = RandomForestClassifier()
+
+# Model Training
+Random_forest_model.fit(xtrain_scaled, y_train)
+
+# Model Prediction
+y_pred = Random_forest_model.predict(xtest_scaled)
+
+# Model Evaluation
+
+# Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
+print(cm)
+
+# Visualizing confusion matrix
+sns.heatmap(cm, annot = True, fmt = 'd')
+
+# Finding the Accuracy score of the model
+from sklearn.metrics import accuracy_score
+model_accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy score of the model = ", model_accuracy)
+
+# Finding the Precision score of the model
+from sklearn.metrics import precision_score
+model_precision = precision_score(y_test, y_pred)
+print("Precision score of the model = ", model_precision)
+
+# Finding the Recall score of the model
+from sklearn.metrics import recall_score
+model_recall = recall_score(y_test, y_pred)
+print("Recall score of the model = ", model_recall)
+
+# Finding the F1-score of the model
+from sklearn.metrics import f1_score
+f1score = f1_score(y_test, y_pred)
+print("F1-score of the model = ", f1score)
+
+# Displaying the Classification Report
+from sklearn.metrics import classification_report
+print(classification_report(y_test, y_pred))
+
+# Feature Importance Analysis
+score_list = Random_forest_model.feature_importances_
+list_of_features = list(X.columns)
+score_df = pd.DataFrame({"Feature":list_of_features, 'Score':score_list})
+score_df.sort_values(by = 'Score', ascending = False)
+
+# Visualizing feature importance
+list_of_features = list(X.columns)
+plt.figure(figsize = (8, 6))
+plt.barh(range(len(list_of_features)), Random_forest_model.feature_importances_)
+plt.yticks(np.arange(len(list_of_features)), list_of_features)
+plt.ylabel('Features')
+plt.show()
+
+# Applying 5-fold cross-validation
+from sklearn.model_selection import cross_val_score
+scores = cross_val_score(Random_forest_model, xtrain_scaled, y_train, cv = 5, scoring = 'accuracy')
+print('cross-validation scores =', scores)
+
+Avg_Model_score = scores.mean()
+print('Average Model Score = ', Avg_Model_score)
+
+# Take user input to make predictions for new samples as given by the user.
+print("Please provide the following details:")
+satisfaction_level = float(input("Satisfaction Level (0-1): "))
+last_evaluation = float(input("Last Evaluation (0-1): "))
+number_project = int(input("Number of Projects: "))
+average_monthly_hours = int(input("Average Monthly Hours: "))
+time_spend_company = int(input("Time Spent in Company (years): "))
+work_accident = int(input("Work Accident (1 for yes, 0 for no): "))
+promotion_last_5years = int(input("Promotion in Last 5 Years (1 for yes, 0 for no): "))
+salary = input("Salary (low, medium, high): ")
+department = input("Department: ")
+
+# Transform user inputs to match the format used during training
+salary_encoded = label_encoder1.transform([salary])[0]
+department_encoded = label_encoder2.transform([department])[0]
+
+# Create a DataFrame with the user input
+new_sample = pd.DataFrame({
+    'satisfaction_level': [satisfaction_level],
+    'last_evaluation': [last_evaluation],
+    'number_project': [number_project],
+    'average_montly_hours': [average_monthly_hours],
+    'time_spend_company': [time_spend_company],
+    'Work_accident': [work_accident],
+    'promotion_last_5years': [promotion_last_5years],
+    'Department': [department_encoded],
+    'salary': [salary_encoded]
+})
+
+# Scale the features
+new_sample_scaled = std_scaler.transform(new_sample)
+
+# Predict churn for user input using the developed model
+prediction = Random_forest_model.predict(new_sample_scaled)
+
+if prediction[0] == 1:
+    print("The employee is likely to leave.")
+else:
+    print("The employee is likely to stay.")
